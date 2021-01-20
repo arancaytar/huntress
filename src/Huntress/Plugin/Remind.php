@@ -184,7 +184,7 @@ HELP;
     {
         /** @var \Doctrine\DBAL\Connection $db */
         $db = $message->client->db;
-        $snow = Snowflake::deconstruct($code);
+        $snow = Snowflake::parse($code);
         $reminder = $db->executeQuery("SELECT * FROM remind WHERE (`snow` = ?)", [$snow])->fetch();
 
         if (!$reminder) {
