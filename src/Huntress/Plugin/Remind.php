@@ -152,7 +152,7 @@ class Remind implements PluginInterface
             $embed->addField("Detected Time",
                 $time->toDayDateTimeString() . PHP_EOL . $tzinfo . PHP_EOL . $time->longRelativeToNowDiffForHumans(2));
             $embed->addField("To delete",
-                sprintf("`!rem del %s", Snowflake::format($snow))
+                sprintf("`!rem del %s`", Snowflake::format($snow))
             );
 
             self::addReminder($data->message, $time, $text, $snow);
