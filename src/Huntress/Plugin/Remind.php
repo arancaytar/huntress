@@ -17,6 +17,7 @@ use Huntress\DatabaseFactory;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\Snowflake;
@@ -116,7 +117,7 @@ class Remind implements PluginInterface
                 return $data->message->channel->send(self::getHelp());
             }
             elseif ($time === 'del' || $time === 'delete') {
-                return self::deleteReminder($data->message, $text);
+                return self::deleteReminder($data, $text);
             }
             if (!$text) {
                 $text = "*No reminder message left*";
@@ -180,9 +181,10 @@ HELP;
 
     }
 
-    public static function deleteReminder(Message $message, string $code): ?Promise
+    public static function deleteReminder(EventData $data, string $code): ?Promise
     {
         /** @var \Doctrine\DBAL\Connection $db */
+        $message = $data->message;
         $db = $message->client->db;
         $snow = Snowflake::parse($code);
         $reminder = $db->executeQuery("SELECT * FROM remind WHERE (`snow` = ?)", [$snow])->fetch();
@@ -191,7 +193,10 @@ HELP;
             return $message->channel->send("No reminder matching `$code` was found.");
         }
         if ($message->member->id !== $reminder['idMember']) {
-            return $message->channel->send("You cannot delete a reminder created by another user.");
+            $p = new Permission('p.reminder.delete', $data->huntress, false);
+            if (!$p->resolve()) {
+                return $message->channel->send("You cannot delete a reminder created by another user.");
+            }
         }
         $stmt = $db->prepare('DELETE FROM remind WHERE (`snow` = ?)', ['integer']);
         $stmt->bindValue(1, $snow);
